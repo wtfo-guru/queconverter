@@ -91,3 +91,6 @@ ENV/
 
 # uniconverter
 uc2
+utils
+subproj/
+

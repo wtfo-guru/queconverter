@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#  Copyright (C) 2016 by Ihor E. Novikov
+#  Copyright (C) 2012 by Ihor E. Novikov
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License
@@ -15,12 +15,21 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from qc3.utils.config import XmlConfigParser
 
+JOB = 0
+OK = 1
+INFO = 2
+WARNING = 3
+ERROR = 4
+STOP = 5
 
-class SVG_Config(XmlConfigParser):
-  system_encoding = "utf-8"
-  encoding = "utf-8"
-  indent = "\t"
-  filename = "svg_config.xml"
-  svg_dpi = 0.0
+MESSAGES = {
+    JOB: 'JOB',
+    OK: 'OK',
+    INFO: 'INFO',
+    WARNING: 'WARNING',
+    ERROR: 'ERROR',
+    STOP: 'STOP',
+}
+
+MAX_LEN = max(*[len(val) for val in MESSAGES.values()])

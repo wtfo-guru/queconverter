@@ -17,35 +17,35 @@
 
 import os
 
-from uc2 import uc2const
-from uc2.formats.generic import BinaryModelPresenter
-from uc2.formats.cgm import cgm_model, cgm_filters, cgm_to_sk2, cgm_from_sk2
-from uc2.formats.cgm.cgm_config import CGM_Config
+from qc3 import qc3const
+from qc3.formats.generic import BinaryModelPresenter
+from qc3.formats.cgm import cgm_model, cgm_filters, cgm_to_sk2, cgm_from_sk2
+from qc3.formats.cgm.cgm_config import CGM_Config
 
 
 class CGM_Presenter(BinaryModelPresenter):
-    cid = uc2const.CGM
+  cid = qc3const.CGM
 
-    config = None
-    doc_file = ''
-    model = None
+  config = None
+  doc_file = ""
+  model = None
 
-    def __init__(self, appdata, cnf=None):
-        cnf = cnf or {}
-        self.config = CGM_Config()
-        config_file = os.path.join(appdata.app_config_dir, 'cgm_config.xml')
-        self.config.load(config_file)
-        self.config.update(cnf)
-        self.appdata = appdata
-        self.loader = cgm_filters.CgmLoader()
-        self.saver = cgm_filters.CgmSaver()
-        self.new()
+  def __init__(self, appdata, cnf=None):
+    cnf = cnf or {}
+    self.config = CGM_Config()
+    config_file = os.path.join(appdata.app_config_dir, "cgm_config.xml")
+    self.config.load(config_file)
+    self.config.update(cnf)
+    self.appdata = appdata
+    self.loader = cgm_filters.CgmLoader()
+    self.saver = cgm_filters.CgmSaver()
+    self.new()
 
-    def new(self):
-        self.model = cgm_model.get_empty_cgm()
+  def new(self):
+    self.model = cgm_model.get_empty_cgm()
 
-    def translate_from_sk2(self, sk2_doc):
-        cgm_from_sk2.SK2_to_CGM_Translator().translate(sk2_doc, self)
+  def translate_from_sk2(self, sk2_doc):
+    cgm_from_sk2.SK2_to_CGM_Translator().translate(sk2_doc, self)
 
-    def translate_to_sk2(self, sk2_doc):
-        cgm_to_sk2.CGM_to_SK2_Translator().translate(self, sk2_doc)
+  def translate_to_sk2(self, sk2_doc):
+    cgm_to_sk2.CGM_to_SK2_Translator().translate(self, sk2_doc)

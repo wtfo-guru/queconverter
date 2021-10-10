@@ -15,8 +15,8 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from uc2.utils.config import XmlConfigParser
+from qc3.utils.config import XmlConfigParser
 
 
 class CGM_Config(XmlConfigParser):
-    system_encoding = 'cp1251'
+  system_encoding = "cp1251"

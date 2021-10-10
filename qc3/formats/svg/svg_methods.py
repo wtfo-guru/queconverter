@@ -17,40 +17,39 @@
 
 from copy import deepcopy
 
-from uc2.formats.svg import svg_const
-from uc2.formats.svg.svg_utils import create_xmlobj, create_nl
+from qc3.formats.svg import svg_const
+from qc3.formats.svg.svg_utils import create_xmlobj, create_nl
 
 
 def create_new_svg(config):
-    doc = create_xmlobj('svg', deepcopy(svg_const.SVG_ATTRS))
-    defs = create_xmlobj('defs', {'id': 'defs1'})
-    doc.childs.append(create_nl())
-    doc.childs.append(defs)
-    return doc
+  doc = create_xmlobj("svg", deepcopy(svg_const.SVG_ATTRS))
+  defs = create_xmlobj("defs", {"id": "defs1"})
+  doc.childs.append(create_nl())
+  doc.childs.append(defs)
+  return doc
 
 
 class SVG_Methods:
-    presenter = None
-    model = None
-    config = None
+  presenter = None
+  model = None
+  config = None
 
-    def __init__(self, presenter):
-        self.presenter = presenter
+  def __init__(self, presenter):
+    self.presenter = presenter
 
-    def update(self):
-        self.model = self.presenter.model
-        self.config = self.presenter.config
+  def update(self):
+    self.model = self.presenter.model
+    self.config = self.presenter.config
 
-    def get_units(self, value):
-        if len(value) > 1:
-            for item in svg_const.SVG_UNITS:
-                if value.endswith(item):
-                    return item
-        return svg_const.SVG_PX
+  def get_units(self, value):
+    if len(value) > 1:
+      for item in svg_const.SVG_UNITS:
+        if value.endswith(item):
+          return item
+    return svg_const.SVG_PX
 
-    def doc_units(self):
-        for item in self.model.childs:
-            if item.tag == 'sodipodi:namedview':
-                return item.attrs.get('inkscape:document-units',
-                                      svg_const.SVG_PX)
-        return self.get_units(self.model.attrs.get('width', ''))
+  def doc_units(self):
+    for item in self.model.childs:
+      if item.tag == "sodipodi:namedview":
+        return item.attrs.get("inkscape:document-units", svg_const.SVG_PX)
+    return self.get_units(self.model.attrs.get("width", ""))
