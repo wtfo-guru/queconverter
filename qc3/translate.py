@@ -39,15 +39,15 @@ SAVER_IDS = qc3const.PALETTE_SAVERS + qc3const.MODEL_SAVERS + qc3const.BITMAP_SA
 #       options.pop(key)
 
 
-def convert(appdata, files, args):
-  dry_run = args.dryrun
+def convert(appdata, files, options):
+  dry_run = bool(options.get('dry-run'))
   # normalize_options(options)
 
   msg = 'Translation of "%s" into "%s"' % (files[0], files[1])
   events.emit(events.MESSAGES, msgconst.JOB, msg)
 
   # Define saver -----------------------------------------
-  sid = args.format.lower()
+  sid = options.get('format', '').lower()
   if sid and sid in SAVER_IDS:
     saver_id = sid
     saver = get_saver_by_id(saver_id)

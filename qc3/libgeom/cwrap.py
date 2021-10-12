@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from qc3 import libcairo
+import qc3.libcairo as libcairo
 
 
 def create_cpath(cache_paths):

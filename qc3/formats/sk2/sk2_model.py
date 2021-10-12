@@ -20,7 +20,7 @@ import math
 from base64 import b64decode, b64encode
 from copy import deepcopy
 
-from sk2_cids import *
+from .sk2_cids import *
 from qc3 import _, cms, qc3const, libgeom, sk2const
 from qc3.formats.generic import TextModelObject
 from qc3.libimg.handlers import EditableImageHandler

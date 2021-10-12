@@ -83,6 +83,14 @@ class QCApplication:
     if args[0] == msgconst.STOP:
       echo("For details see logs: %s\n" % self.log_filepath)
 
+  def __mk_options(self) -> tp.Dict:
+    options = {}
+    options['dry-run'] = self.args.dry_run
+    options['verbose'] = self.args.verbose > 0
+    options['verbose-short'] = self.args.verbose_short
+    options['recursive'] = self.args.recursive
+    return options
+
   def __parse_args(self) -> tp.Optional[tp.NoReturn]:
     parser = argparse.ArgumentParser(
       prog="queconverter",
@@ -105,7 +113,7 @@ class QCApplication:
     parser.add_argument(
       "--dry-run",
       action="store_true",
-      dest="dryrun",
+      dest="dry_run",
       default=False,
       help="specify dry run",
     )
@@ -120,7 +128,7 @@ class QCApplication:
     parser.add_argument(
       "--show-log",
       action="store_true",
-      dest="log",
+      dest="show_log",
       default=False,
       help="show previous log",
     )
@@ -148,12 +156,26 @@ class QCApplication:
       help="set log level",
     )
     parser.add_argument(
+      "-r", "--recursive",
+      action="store_true",
+      dest="recursive",
+      default=False,
+      help="show config",
+    )
+    parser.add_argument(
       "--show-config",
       "--show-prefs",
       action="store_true",
       dest="showcfg",
       default=False,
       help="show config",
+    )
+    parser.add_argument(
+      "--verbose-short",
+      action="store_true",
+      dest="verbose_short",
+      default=False,
+      help="specify short verbose wtf?",
     )
     parser.add_argument(
       "-v",
@@ -190,10 +212,9 @@ class QCApplication:
     elif self.args.parts:
       self.__show_parts(self.appdata)
       sys.exit(0)
-    elif self.args.log:
+    elif self.args.show_log:
       log_filepath = os.path.join(self.appdata.app_config_dir, "qc3.log")
-      log_filepath = log_filepath.decode("utf-8")
-      with open(log_filepath, "rb") as fileptr:
+      with open(log_filepath, "r") as fileptr:
         echo(fileptr.read())
       sys.exit(0)
     elif self.args.showdir:
@@ -243,9 +264,9 @@ class QCApplication:
       self.__show_short_help(msg)
       sys.exit(1)
 
-    command = translate.convert
+    options = self.__mk_options()
     if any(["*" in files[0], "?" in files[0]]):
-      command = cmds.wildcard_convert
+      translate.wildcard_convert(self.appdata, files, options)
       if os.path.exists(files[1]):
         if not os.path.isdir(files[1]):
           msg = 'Destination directory "%s" is not a directory!'
@@ -254,7 +275,7 @@ class QCApplication:
       else:
         os.makedirs(files[1])
     elif len(files) > 2:
-      command = cmds.multiple_convert
+      translate.multiple_convert(self.appdata, files, options)
       if os.path.exists(files[-1]):
         if not os.path.isdir(files[-1]):
           msg = 'Destination directory "%s" is not a directory!'
@@ -265,8 +286,8 @@ class QCApplication:
     elif not os.path.exists(files[0]):
       self.__show_short_help('Source file "%s" is not found!' % files[0])
       sys.exit(1)
-
-    return command, files, options
+    else:
+      translate.convert(self.appdata, files, options)
 
   def __call__(self, current_dir: tp.Optional[str] = None) -> tp.NoReturn:
     """QueConverter translation callable.
@@ -276,7 +297,6 @@ class QCApplication:
     self.check_sys_args(current_dir=current_dir)
 
     self.do_verbose = self.args.verbose > 0
-    command, files, options = self.get_translation_args(current_dir=current_dir)
 
     events.connect(events.MESSAGES, self.verbose)
     config_logging(
@@ -290,8 +310,7 @@ class QCApplication:
     status = 0
     # noinspection PyBroadException
     try:
-      print('Not implemented yet!')
-      command(self.appdata, files, options)
+      self.get_translation_args(current_dir=current_dir)
     except Exception as ex:
       msg = str(ex)
       print(msg)

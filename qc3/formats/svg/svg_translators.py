@@ -18,7 +18,7 @@
 import logging
 import os
 from base64 import b64decode, b64encode
-from cStringIO import StringIO
+from io import StringIO
 from copy import deepcopy
 
 from PIL import Image
