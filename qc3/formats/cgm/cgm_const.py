@@ -425,23 +425,24 @@ def create_color_table(sz):
     bs = bs + 1
   cb = bs / 3
   tb = bs % 3
-  mc = (1 << (cb + tb)) - 1.0
+  mc = (1 << int(cb + tb)) - 1.0
   table = mx * [(0.0, 0.0, 0.0)]
   for i in range(mx):
     j = i + mx - 1
     j = j % mx
     red, grn, blu = 0, 0, 0
-    for k in range(cb):
-      red = (red << 1) + j % 2
-      j = j >> 1
-      grn = (grn << 1) + j % 2
-      j = j >> 1
-      blu = (blu << 1) + j % 2
-      j = j >> 1
+    for _k in range(int(cb)):
+      red = (int(red) << 1) + j % 2
+      j = int(j) >> 1
+      grn = (int(grn) << 1) + j % 2
+      j = int(j) >> 1
+      blu = (int(blu) << 1) + j % 2
+      j = int(j) >> 1
     tint = j
-    red = (red << tb) + tint
-    grn = (grn << tb) + tint
-    blu = (blu << tb) + tint
+    itb = int(tb)
+    red = (int(red) << itb) + tint
+    grn = (int(grn) << itb) + tint
+    blu = (int(blu) << itb) + tint
     table[i] = (red / mc, grn / mc, blu / mc)
   return table
 
