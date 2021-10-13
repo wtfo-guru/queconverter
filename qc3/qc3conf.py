@@ -19,6 +19,7 @@ import typing as tp
 
 from . import qc3const
 from .utils import sconfig
+from .utils.mixutils import echo
 
 
 class QCData:
@@ -71,6 +72,39 @@ class QCData:
         libcms.cms_save_default_profile(path, item)
 
 
+LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR"]
+
+DEFAULT_RGB = "Built-in RGB profile"
+DEFAULT_CMYK = "Built-in CMYK profile"
+DEFAULT_LAB = "Built-in Lab profile"
+DEFAULT_GRAY = "Built-in Grayscale profile"
+
+INTENTS = {
+  qc3const.INTENT_PERCEPTUAL: "PERCEPTUAL",
+  qc3const.INTENT_RELATIVE_COLORIMETRIC: "RELATIVE_COLORIMETRIC",
+  qc3const.INTENT_SATURATION: "SATURATION",
+  qc3const.INTENT_ABSOLUTE_COLORIMETRIC: "ABSOLUTE_COLORIMETRIC",
+  "PERCEPTUAL": qc3const.INTENT_PERCEPTUAL,
+  "RELATIVE_COLORIMETRIC": qc3const.INTENT_RELATIVE_COLORIMETRIC,
+  "SATURATION": qc3const.INTENT_SATURATION,
+  "ABSOLUTE_COLORIMETRIC": qc3const.INTENT_ABSOLUTE_COLORIMETRIC,
+}
+
+BOOL_ATTRS = ("cms_use", "black_point_compensation", "black_preserving_transform")
+INTENT_ATTRS = ("cms_rgb_intent", "cms_cmyk_intent")
+PROFILES = (
+  "cms_rgb_profile",
+  "cms_cmyk_profile",
+  "cms_lab_profile",
+  "cms_gray_profile",
+)
+PROFILE_DICTS = (
+  "cms_rgb_profiles",
+  "cms_cmyk_profiles",
+  "cms_lab_profiles",
+  "cms_gray_profiles",
+)
+
 class QCConfig(sconfig.SerializedConfig):
   """Represents QCApplication config"""
 
@@ -105,10 +139,73 @@ class QCConfig(sconfig.SerializedConfig):
   cms_bpc_flag: bool = False
   cms_bpt_flag: bool = False
 
-  @staticmethod
-  def get_defaults() -> tp.Dict:
+  def __init__(self) -> None:
+    self.defaults = QCConfig.__dict__.copy()
+
+  def get_defaults(self) -> tp.Dict:
     """Returns default values of QCConfig class
 
     :return: dict of default field values
     """
-    return QCConfig.__dict__.copy()
+    return self.defaults
+
+  @staticmethod
+  def to_bool(val):
+    return "yes" if val else "no"
+
+  def show(self):
+    echo()
+    echo("Globall preferences:\n")
+    echo("  --log_level=%s" % self.log_level)
+    echo()
+    echo("Color Picker preferences:\n")
+    echo()
+    echo("  --cms_use=%s" % self.to_bool(self.cms_use))
+    echo('  --cms_rgb_profile="%s"' % (self.cms_rgb_profile or DEFAULT_RGB))
+    echo('  --cms_cmyk_profile="%s"' % (self.cms_cmyk_profile or DEFAULT_CMYK))
+    echo('  --cms_lab_profile="%s"' % (self.cms_lab_profile or DEFAULT_LAB))
+    echo('  --cms_gray_profile="%s"' % (self.cms_gray_profile or DEFAULT_GRAY))
+    echo()
+    echo('  --cms_rgb_intent="%s"' % INTENTS[self.cms_rgb_intent])
+    echo('  --cms_cmyk_intent="%s"' % INTENTS[self.cms_cmyk_intent])
+    echo()
+    echo("  --black_point_compensation=%s" % self.to_bool(self.cms_bpc_flag))
+    echo("  --black_preserving_transform=%s" % self.to_bool(self.cms_bpt_flag))
+    echo()
+
+  def change_config(self, options):
+    if len(options) < 2:
+      echo("Please provide configuration values to change.")
+      return
+    for key, value in options.items():
+      if key in BOOL_ATTRS:
+        QCConfig.__dict__[key] = bool(value)
+      elif key == "log_level":
+        if value in LEVELS:
+          QCConfig.log_level = value
+      elif key in INTENT_ATTRS:
+        if isinstance(value, int) and value in INTENTS:
+          QCConfig.__dict__[key] = value
+        elif value in INTENTS:
+          QCConfig.__dict__[key] = INTENTS[value]
+      elif key in PROFILES and isinstance(value, str):
+        if not value:
+          QCConfig.__dict__[key] = ""
+          continue
+        cs = qc3const.COLORSPACES[PROFILES.index(key)]
+        path = fsutils.normalize_path(value)
+        if not fsutils.exists(path):
+          echo('ERROR: file "%s" is not found!' % path)
+          continue
+        profile_name = cms.get_profile_name(path)
+        if not profile_name:
+          echo('ERROR: file "%s" is not valid color profile!' % path)
+          continue
+        profile_dir = self.app.appdata.app_color_profile_dir
+        dest_path = os.path.join(profile_dir, "%s.icc" % cs)
+        if fsutils.exists(dest_path):
+          os.remove(dest_path)
+        shutil.copy(path, dest_path)
+        profile_dict = PROFILE_DICTS[PROFILES.index(key)]
+        QCConfig.__dict__[profile_dict] = {profile_name: dest_path}
+        QCConfig.__dict__[key] = profile_name

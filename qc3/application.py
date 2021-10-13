@@ -23,10 +23,12 @@ import textwrap
 import typing as tp
 
 import qc3
-from . import app_cms, events, msgconst, configure, translate
+# from .qc3const import MODEL_LOADERS, PALETTE_LOADERS, BITMAP_LOADERS, MODEL_SAVERS, PALETTE_SAVERS, BITMAP_SAVERS
+from . import app_cms, events, msgconst, configure, translate, qc3const
 from .app_palettes import PaletteManager
 from .qc3conf import QCData, QCConfig
 from .utils.mixutils import echo, config_logging
+from jinja2 import Template
 
 LOG = logging.getLogger(__name__)
 
@@ -145,7 +147,7 @@ class QCApplication:
 
     template = Template(HELP_TEMPLATE)
     additional_help_data = {}
-    additional_help_data['program_name'] = self.appdata['app_proc']
+    additional_help_data['program_name'] = self.appdata.app_proc
     sep = ' '
     nunyet = 'None at this time.'
     if len(MODEL_LOADERS) > 0:
@@ -305,7 +307,7 @@ class QCApplication:
       echo(os.path.dirname(os.path.dirname(__file__)))
       sys.exit(0)
     elif self.args.show_config:
-      configure.show_config()
+      self.config.show()
       sys.exit(0)
     elif self.args.configure is not None:
       configure.set_values
