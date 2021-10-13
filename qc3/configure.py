@@ -64,8 +64,10 @@ def to_bool(val):
 def show_config():
   config = qc3.config
   echo()
-  echo("Color Picker preferences:\n")
+  echo("Globall preferences:\n")
   echo("  --log_level=%s" % config.log_level)
+  echo()
+  echo("Color Picker preferences:\n")
   echo()
   echo("  --cms_use=%s" % to_bool(config.cms_use))
   echo('  --cms_rgb_profile="%s"' % (config.cms_rgb_profile or DEFAULT_RGB))

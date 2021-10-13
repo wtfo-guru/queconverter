@@ -39,6 +39,56 @@ LOG_MAP: tp.Dict[int, tp.Callable] = {
   msgconst.STOP: lambda *args: args,
 }
 
+HELP_TEMPLATE = '''
+
+Additional information:
+
+Usage: {{program_name}} [OPTIONS] INPUT_FILE OUTPUT_FILE
+Example: {{program_name}} drawing.cgm drawing.svg
+
+---Bulk operations:---------------------------------
+
+Usage: {{program_name}} [OPTIONS] FILE_PATTERN OUTPUT_DIRECTORY
+Example: {{program_name}} --recursive --format=PDF '~/clipart/*.svg' ~/clipart_pdf/
+
+ Available options:
+ --vs, --verbose-short   Show minimized internal logs
+ --dry-run               Execute command without translation
+ --recursive             Recursive scanning
+
+---Configuring:-------------------------------------
+
+Usage: {{program_name}} --configure [settings]
+Examples: {{program_name}} --configure 'cms_use=yes'
+          {{program_name}} --configure 'cms_use=yes,log_level=DEBUG'
+
+ Available options:
+ {{program_name}} --show-config
+
+---INPUT FILE FORMATS-------------------------------
+
+ Supported input vector graphics file formats:
+   {{model_loaders}}
+
+ Supported input palette file formats:
+   {{pallette_loaders}}
+
+ Supported input image file formats:
+   {{bitmap_loaders}}
+
+---OUTPUT FILE FORMATS------------------------------
+
+ Supported output vector graphics file formats:
+   {{model_savers}}
+
+ Supported output palette file formats:
+   {{pallette_savers}}
+
+ Supported output image file formats:
+   {{bitmap_savers}}
+
+----------------------------------------------------
+'''
 
 class QCApplication:
   """Represents QueConverter application.
@@ -92,14 +142,41 @@ class QCApplication:
     return options
 
   def __parse_args(self) -> tp.Optional[tp.NoReturn]:
+
+    template = Template(HELP_TEMPLATE)
+    additional_help_data = {}
+    additional_help_data['program_name'] = self.appdata['app_proc']
+    sep = ' '
+    nunyet = 'None at this time.'
+    if len(MODEL_LOADERS) > 0:
+      additional_help_data['model_loaders'] = sep.join(MODEL_LOADERS)
+    else:
+      additional_help_data['model_loaders'] = nunyet
+    if len(PALETTE_LOADERS) > 0:
+      additional_help_data['pallette_loaders'] = sep.join(PALETTE_LOADERS)
+    else:
+      additional_help_data['pallette_loaders'] = nunyet
+    if len(BITMAP_SAVERS) > 0:
+      additional_help_data['bitmap_loaders'] = sep.join(BITMAP_SAVERS)
+    else:
+      additional_help_data['bitmap_loaders'] = nunyet
+    if len(MODEL_SAVERS) > 0:
+      additional_help_data['model_savers'] = sep.join(MODEL_SAVERS)
+    else:
+      additional_help_data['model_savers'] = nunyet
+    if len(PALETTE_SAVERS) > 0:
+      additional_help_data['pallette_savers'] = sep.join(PALETTE_SAVERS)
+    else:
+      additional_help_data['pallette_savers'] = nunyet
+    if len(BITMAP_SAVERS) > 0:
+      additional_help_data['bitmap_savers'] = sep.join(BITMAP_SAVERS)
+    else:
+      additional_help_data['bitmap_savers'] = nunyet
+
     parser = argparse.ArgumentParser(
-      prog="queconverter",
+      prog=additional_help_data['program_name'],
       formatter_class=argparse.RawDescriptionHelpFormatter,
-      epilog=textwrap.dedent(
-        """\
-        Example: queconverter drawing.cgm drawing.svg
-        """
-      ),
+      epilog=template.render(**additional_help_data),
     )
     parser.add_argument("files", nargs='*', default=[], help="specify files to convert")
     parser.add_argument(
@@ -148,6 +225,13 @@ class QCApplication:
       help="specify format of saved output",
     )
     parser.add_argument(
+      "--configure",
+      action="store",
+      dest="configure",
+      default='',
+      help="set configuration values",
+    )
+    parser.add_argument(
       "--log",
       "--log-level",
       action="store",
@@ -166,16 +250,16 @@ class QCApplication:
       "--show-config",
       "--show-prefs",
       action="store_true",
-      dest="showcfg",
+      dest="show_config",
       default=False,
       help="show config",
     )
     parser.add_argument(
-      "--verbose-short",
+      "--vs", "--verbose-short",
       action="store_true",
       dest="verbose_short",
       default=False,
-      help="specify short verbose wtf?",
+      help="Show minimized internal logs",
     )
     parser.add_argument(
       "-v",
@@ -220,16 +304,13 @@ class QCApplication:
     elif self.args.showdir:
       echo(os.path.dirname(os.path.dirname(__file__)))
       sys.exit(0)
-    elif self.args.showcfg:
+    elif self.args.show_config:
       configure.show_config()
       sys.exit(0)
-    # TODO: write configure support
-    # elif cmds.check_args(cmds.CONFIG_CMDS):
-    #   options = cmds.parse_cmd_args(current_dir)[1]
-    #   cmds.normalize_options(options)
-    #   cmds.change_config(options)
-    #   self.config.save()
-    #   sys.exit(0)
+    elif self.args.configure is not None:
+      configure.set_values
+      self.config.save()
+      sys.exit(0)
 
   def __reconcile_files(self, current_dir: tp.Optional[str]) -> tp.List[str]:
     files = []
@@ -353,24 +434,4 @@ class QCApplication:
     except Exception as e:
       QCApplication.__show_part(part, "FAIL")
       echo("Reason: %s" % str(e))
-    echo()
-
-  @staticmethod
-  def show_config():
-    config = qc3.config
-    echo()
-    echo("Color Picker preferences:\n")
-    echo("  --log_level=%s" % config.log_level)
-    echo()
-    echo("  --cms_use=%s" % to_bool(config.cms_use))
-    echo('  --cms_rgb_profile="%s"' % (config.cms_rgb_profile or DEFAULT_RGB))
-    echo('  --cms_cmyk_profile="%s"' % (config.cms_cmyk_profile or DEFAULT_CMYK))
-    echo('  --cms_lab_profile="%s"' % (config.cms_lab_profile or DEFAULT_LAB))
-    echo('  --cms_gray_profile="%s"' % (config.cms_gray_profile or DEFAULT_GRAY))
-    echo()
-    echo('  --cms_rgb_intent="%s"' % INTENTS[config.cms_rgb_intent])
-    echo('  --cms_cmyk_intent="%s"' % INTENTS[config.cms_cmyk_intent])
-    echo()
-    echo("  --black_point_compensation=%s" % to_bool(config.cms_bpc_flag))
-    echo("  --black_preserving_transform=%s" % to_bool(config.cms_bpt_flag))
     echo()
